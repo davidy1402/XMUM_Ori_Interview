@@ -95,7 +95,7 @@ export function BookClient({
   serverTime,
 }: BookClientProps = {}) {
   const searchParams = useSearchParams()
-  const now = serverTime ?? Date.now()
+  const [now, setNow] = useState<number>(() => serverTime ?? Date.now())
 
   const isGmClosed = isTrackClosed('game_master', now)
   const isFaciClosed = isTrackClosed('facilitator', now)
@@ -391,7 +391,9 @@ export function BookClient({
     setSubmitError(null)
     if (formInvalid) return
 
-    if (isTrackClosed(track, Date.now())) {
+    const currentNow = Date.now()
+    if (isTrackClosed(track, currentNow)) {
+      setNow(currentNow)
       setSubmitError(
         track === 'game_master'
           ? 'Game Master interview registration closed at 12:00 PM.'
@@ -461,7 +463,11 @@ export function BookClient({
   }
 
   function proceedToStep2() {
-    if (isTrackClosed(track, now)) return
+    const currentNow = Date.now()
+    if (isTrackClosed(track, currentNow)) {
+      setNow(currentNow)
+      return
+    }
     if (typeof window !== 'undefined') {
       window.history.pushState({ bookStep: 2 }, '')
     }
@@ -496,8 +502,11 @@ export function BookClient({
 
   async function handleStepClick(targetStep: number) {
     if (targetStep === step) return
-    if (step === 4) return
-    if ((targetStep === 2 || targetStep === 3) && isTrackClosed(track, now)) return
+    const currentNow = Date.now()
+    if ((targetStep === 2 || targetStep === 3) && isTrackClosed(track, currentNow)) {
+      setNow(currentNow)
+      return
+    }
 
     if (targetStep === 1) {
       if (step === 3) {
@@ -542,7 +551,9 @@ export function BookClient({
 
   async function reserveAndContinue() {
     if (!selectedSlot) return
-    if (isTrackClosed(track, now)) {
+    const currentNow = Date.now()
+    if (isTrackClosed(track, currentNow)) {
+      setNow(currentNow)
       setReserveError(`Registration for ${track === 'game_master' ? 'Game Master' : 'Facilitator'} is now closed.`)
       return
     }
@@ -904,7 +915,11 @@ export function BookClient({
                   type="button"
                   disabled={closed}
                   onClick={() => {
-                    if (closed) return
+                    const currentNow = Date.now()
+                    if (isTrackClosed(t.key, currentNow)) {
+                      setNow(currentNow)
+                      return
+                    }
                     if (track !== t.key) {
                       setTrack(t.key)
                       setSelectedId(null)

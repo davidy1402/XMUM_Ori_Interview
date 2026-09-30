@@ -369,6 +369,40 @@ describe('BookClient history and hold release', () => {
     expect(continueBtn.getAttribute('disabled')).toBeNull()
   })
 
+  it('updates UI to closed state and blocks proceeding when deadline passes while user is on page', async () => {
+    // Loaded at 11:55 AM (GM is still open)
+    const beforeNoon = new Date('2026-09-30T11:55:00+08:00').getTime()
+
+    render(
+      <BookClient
+        initialSlotsByTrack={sampleSlots}
+        initialOrientation="december"
+        initialTrack="game_master"
+        serverTime={beforeNoon}
+      />
+    )
+
+    // Button is initially "Continue to Select Slot →"
+    const continueBtn = screen.getByRole('button', { name: /continue to select slot/i })
+    expect(continueBtn.getAttribute('disabled')).toBeNull()
+
+    // Time passes to 12:05 PM while user is on page
+    const afterNoon = new Date('2026-09-30T12:05:00+08:00').getTime()
+    const nowSpy = vi.spyOn(Date, 'now').mockReturnValue(afterNoon)
+
+    // User attempts to click Continue to Select Slot
+    await act(async () => {
+      fireEvent.click(continueBtn)
+    })
+
+    // It should not advance to step 2; instead UI updates to Position Closed
+    expect(screen.queryByRole('heading', { name: /select an interview slot/i })).toBeNull()
+    expect(screen.getByRole('button', { name: /position closed/i })).toBeDefined()
+    expect(screen.getByText(/Game Master interview registration closed at 12:00 PM/i)).toBeDefined()
+
+    nowSpy.mockRestore()
+  })
+
   it('disables all tracks and provides Check My Booking Slot link when all deadlines (6:00 PM) have passed', async () => {
     // 07:00 PM (Both closed)
     const afterEveningTime = new Date('2026-09-30T19:00:00+08:00').getTime()
