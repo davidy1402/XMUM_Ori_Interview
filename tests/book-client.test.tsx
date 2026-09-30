@@ -312,4 +312,71 @@ describe('BookClient history and hold release', () => {
     })
     expect(screen.getByRole('heading', { name: /select your desired position/i })).toBeDefined()
   })
+
+  it('disables Game Master button and falls back to Facilitator when GM deadline (12:00 PM) has passed', async () => {
+    // 12:30 PM (GM closed, Facilitator open)
+    const afterNoonTime = new Date('2026-09-30T12:30:00+08:00').getTime()
+
+    render(
+      <BookClient
+        initialSlotsByTrack={sampleSlots}
+        initialOrientation="december"
+        initialTrack="game_master"
+        serverTime={afterNoonTime}
+      />
+    )
+
+    // Heading should be visible
+    expect(screen.getByRole('heading', { name: /select your desired position/i })).toBeDefined()
+
+    // Notice banner should state GM is closed
+    expect(screen.getByText(/Game Master interview registration closed at 12:00 PM/i)).toBeDefined()
+
+    // GM button should show Closed badge
+    expect(screen.getByText(/Closed \(12:00 PM\)/i)).toBeDefined()
+
+    // GM button should be disabled
+    const gmButton = screen.getByRole('button', { name: /game master/i })
+    expect(gmButton.getAttribute('disabled')).not.toBeNull()
+
+    // Facilitator button should be enabled
+    const facButton = screen.getByRole('button', { name: /facilitator/i })
+    expect(facButton.getAttribute('disabled')).toBeNull()
+
+    // Clicking GM button should not do anything
+    await act(async () => {
+      fireEvent.click(gmButton)
+    })
+
+    // Active track should have resolved to facilitator
+    const continueBtn = screen.getByRole('button', { name: /continue to select slot/i })
+    expect(continueBtn.getAttribute('disabled')).toBeNull()
+  })
+
+  it('disables all tracks and provides Check My Booking Slot link when all deadlines (6:00 PM) have passed', async () => {
+    // 07:00 PM (Both closed)
+    const afterEveningTime = new Date('2026-09-30T19:00:00+08:00').getTime()
+
+    render(
+      <BookClient
+        initialSlotsByTrack={sampleSlots}
+        initialOrientation="december"
+        initialTrack="facilitator"
+        serverTime={afterEveningTime}
+      />
+    )
+
+    // Banner indicates all registrations closed
+    expect(screen.getByText(/All interview slots for December 2026 Orientation have concluded/i)).toBeDefined()
+
+    // Both track buttons should be disabled
+    const gmButton = screen.getByRole('button', { name: /game master/i })
+    const facButton = screen.getByRole('button', { name: /facilitator/i })
+    expect(gmButton.getAttribute('disabled')).not.toBeNull()
+    expect(facButton.getAttribute('disabled')).not.toBeNull()
+
+    // Should display Check My Booking Slot link
+    const checkBookingLink = screen.getByRole('link', { name: /check my booking slot/i })
+    expect(checkBookingLink.getAttribute('href')).toBe('/my-booking')
+  })
 })
