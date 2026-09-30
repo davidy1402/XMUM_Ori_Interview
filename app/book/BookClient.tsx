@@ -95,14 +95,7 @@ export function BookClient({
   serverTime,
 }: BookClientProps = {}) {
   const searchParams = useSearchParams()
-  const [now, setNow] = useState<number>(() => serverTime ?? Date.now())
-
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setNow(Date.now())
-    }, 5000)
-    return () => clearInterval(timer)
-  }, [])
+  const now = serverTime ?? Date.now()
 
   const isGmClosed = isTrackClosed('game_master', now)
   const isFaciClosed = isTrackClosed('facilitator', now)
@@ -398,6 +391,15 @@ export function BookClient({
     setSubmitError(null)
     if (formInvalid) return
 
+    if (isTrackClosed(track, Date.now())) {
+      setSubmitError(
+        track === 'game_master'
+          ? 'Game Master interview registration closed at 12:00 PM.'
+          : 'Interview registration has closed for this position.'
+      )
+      return
+    }
+
     setSubmitting(true)
     let result: Awaited<ReturnType<typeof confirmReservationAction>>
     try {
@@ -406,6 +408,7 @@ export function BookClient({
         studentId: studentId.trim(),
         email: email.trim(),
         contactNumber: contactNumber.trim(),
+        track,
       })
     } catch {
       setSubmitting(false)

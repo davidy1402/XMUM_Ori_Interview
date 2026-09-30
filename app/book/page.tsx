@@ -45,6 +45,7 @@ export default async function BookPage({
         initialSlotsByTrack={initialSlotsByTrack}
         initialOrientation={initOrientation}
         initialTrack={initTrack}
+        serverTime={Date.now()}
       />
     </Suspense>
   )

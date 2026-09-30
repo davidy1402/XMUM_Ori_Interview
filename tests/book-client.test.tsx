@@ -218,6 +218,7 @@ describe('BookClient history and hold release', () => {
       studentId: 'DSC2405104',
       email: 'you@xmu.edu.my',
       contactNumber: '012-3456789',
+      track: 'facilitator',
     })
   })
 
