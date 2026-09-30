@@ -313,7 +313,7 @@ describe('BookClient history and hold release', () => {
     expect(screen.getByRole('heading', { name: /select your desired position/i })).toBeDefined()
   })
 
-  it('disables Game Master button and falls back to Facilitator when GM deadline (12:00 PM) has passed', async () => {
+  it('disables Game Master button, keeps track as GM with "Position Closed", and only switches to Facilitator when manually clicked', async () => {
     // 12:30 PM (GM closed, Facilitator open)
     const afterNoonTime = new Date('2026-09-30T12:30:00+08:00').getTime()
 
@@ -343,12 +343,27 @@ describe('BookClient history and hold release', () => {
     const facButton = screen.getByRole('button', { name: /facilitator/i })
     expect(facButton.getAttribute('disabled')).toBeNull()
 
-    // Clicking GM button should not do anything
+    // It should NOT automatically switch to Facilitator.
+    // Instead, the primary action button is disabled with "Position Closed", and "Return to Home" links exist.
+    const positionClosedBtn = screen.getByRole('button', { name: /position closed/i })
+    expect(positionClosedBtn.getAttribute('disabled')).not.toBeNull()
+
+    const returnHomeLinks = screen.getAllByRole('link', { name: /return to home/i })
+    expect(returnHomeLinks.length).toBeGreaterThan(0)
+    expect(returnHomeLinks[0].getAttribute('href')).toBe('/')
+
+    // Clicking disabled GM button should remain disabled
     await act(async () => {
       fireEvent.click(gmButton)
     })
+    expect(screen.getByRole('button', { name: /position closed/i })).toBeDefined()
 
-    // Active track should have resolved to facilitator
+    // When the user explicitly chooses Facilitator
+    await act(async () => {
+      fireEvent.click(facButton)
+    })
+
+    // Now Facilitator is selected and they can proceed to select slot
     const continueBtn = screen.getByRole('button', { name: /continue to select slot/i })
     expect(continueBtn.getAttribute('disabled')).toBeNull()
   })

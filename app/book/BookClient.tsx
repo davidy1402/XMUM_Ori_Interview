@@ -108,36 +108,15 @@ export function BookClient({
   const isFaciClosed = isTrackClosed('facilitator', now)
   const allTracksClosed = isGmClosed && isFaciClosed
 
-  const rawInitTrack: Track = initialTrack ?? (isTrack(searchParams.get('track')) ? (searchParams.get('track') as Track) : 'facilitator')
-  const resolvedInitTrack: Track = useMemo(() => {
-    if (rawInitTrack === 'game_master' && isGmClosed && !isFaciClosed) {
-      return 'facilitator'
-    }
-    if (rawInitTrack === 'facilitator' && isFaciClosed && !isGmClosed) {
-      return 'game_master'
-    }
-    return rawInitTrack
-  }, [rawInitTrack, isGmClosed, isFaciClosed])
+  const initTrack: Track = initialTrack ?? (isTrack(searchParams.get('track')) ? (searchParams.get('track') as Track) : 'facilitator')
 
   const initOrientation: Orientation = initialOrientation ?? (isOrientation(searchParams.get('orientation'))
     ? (searchParams.get('orientation') as Orientation)
     : DEFAULT_ORIENTATION)
 
   const [orientation, setOrientation] = useState<Orientation>(initOrientation)
-  const [track, setTrack] = useState<Track>(resolvedInitTrack)
+  const [track, setTrack] = useState<Track>(initTrack)
   const [step, setStep] = useState(1)
-
-  useEffect(() => {
-    if (step === 1) {
-      if (track === 'game_master' && isGmClosed && !isFaciClosed) {
-        setTrack('facilitator')
-        setSelectedId(null)
-      } else if (track === 'facilitator' && isFaciClosed && !isGmClosed) {
-        setTrack('game_master')
-        setSelectedId(null)
-      }
-    }
-  }, [step, track, isGmClosed, isFaciClosed])
 
   // Both tracks are loaded together so each tab can show a truthful count
   // before you click it.
@@ -877,20 +856,36 @@ export function BookClient({
           {!allTracksClosed && isGmClosed && (
             <div
               style={{
-                padding: '12px 16px',
+                padding: '14px 18px',
                 borderRadius: '12px',
                 background: 'var(--badge-danger-bg, #FEF2F2)',
                 border: '1px solid var(--btn-danger-border, #FECACA)',
                 marginBottom: '18px',
                 display: 'flex',
                 alignItems: 'center',
-                gap: '10px',
+                justifyContent: 'space-between',
+                flexWrap: 'wrap',
+                gap: '12px',
               }}
             >
-              <span style={{ fontSize: '18px' }}>ℹ️</span>
-              <div style={{ fontSize: '13.5px', color: 'var(--badge-danger-text, #991B1B)', fontWeight: 600 }}>
-                Game Master interview registration closed at 12:00 PM. Facilitator registration remains open until 6:00 PM.
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <span style={{ fontSize: '18px' }}>ℹ️</span>
+                <div style={{ fontSize: '13.5px', color: 'var(--badge-danger-text, #991B1B)', fontWeight: 600 }}>
+                  Game Master interview registration closed at 12:00 PM. Facilitator registration remains open until 6:00 PM.
+                </div>
               </div>
+              <Link
+                href="/"
+                style={{
+                  fontSize: '13px',
+                  fontWeight: 700,
+                  color: 'var(--badge-danger-text, #991B1B)',
+                  textDecoration: 'underline',
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                Return to Home →
+              </Link>
             </div>
           )}
 
@@ -1037,7 +1032,7 @@ export function BookClient({
                 alignItems: 'center',
               }}
             >
-              ← Back
+              ← Return to Home
             </Link>
 
             {allTracksClosed ? (
@@ -1059,10 +1054,46 @@ export function BookClient({
               >
                 Check My Booking Slot →
               </Link>
+            ) : isTrackClosed(track, now) ? (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <Link
+                  href="/"
+                  style={{
+                    padding: '14px 22px',
+                    borderRadius: '12px',
+                    border: '1px solid var(--border-input, #E2E8F0)',
+                    background: 'var(--bg-card, #fff)',
+                    color: 'var(--text-primary, #0F172A)',
+                    fontWeight: 700,
+                    fontSize: '15px',
+                    textDecoration: 'none',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                  }}
+                >
+                  Return to Home
+                </Link>
+                <button
+                  type="button"
+                  disabled={true}
+                  style={{
+                    padding: '14px 24px',
+                    borderRadius: '12px',
+                    border: 'none',
+                    color: '#fff',
+                    fontWeight: 700,
+                    fontSize: '15px',
+                    background: 'var(--btn-neutral-bg, #CBD5E1)',
+                    cursor: 'not-allowed',
+                    opacity: 0.65,
+                  }}
+                >
+                  Position Closed
+                </button>
+              </div>
             ) : (
               <button
                 type="button"
-                disabled={isTrackClosed(track, now)}
                 onClick={proceedToStep2}
                 style={{
                   padding: '14px 28px',
@@ -1071,15 +1102,12 @@ export function BookClient({
                   color: '#fff',
                   fontWeight: 700,
                   fontSize: '15px',
-                  background: isTrackClosed(track, now)
-                    ? 'var(--btn-neutral-bg, #CBD5E1)'
-                    : 'linear-gradient(100deg, rgba(0, 255, 255, 0.74), #a855f7, #FE06AB)',
-                  cursor: isTrackClosed(track, now) ? 'not-allowed' : 'pointer',
-                  boxShadow: isTrackClosed(track, now) ? 'none' : '0 8px 20px -6px rgba(37,99,235,.5)',
-                  opacity: isTrackClosed(track, now) ? 0.6 : 1,
+                  background: 'linear-gradient(100deg, rgba(0, 255, 255, 0.74), #a855f7, #FE06AB)',
+                  cursor: 'pointer',
+                  boxShadow: '0 8px 20px -6px rgba(37,99,235,.5)',
                 }}
               >
-                {isTrackClosed(track, now) ? 'Position Closed' : 'Continue to Select Slot →'}
+                Continue to Select Slot →
               </button>
             )}
           </div>
